@@ -1,14 +1,16 @@
 <?php
 
-/*if($argc > 1)
+ini_set('display_errors', 'stderr');
+echo("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+if($argc > 1)
 {
     if($argv[2] == "--help")
-        echo("Usage:")
-        #exit(1);
+        echo("Usage: parser.php "); //TODO
+        exit(1);
     
-}*/
+}
 
-/*$header = false;
+$header = false;
 if(fgets(STDIN) == ".IPPcode23")
 {
 $header = true;
@@ -16,13 +18,13 @@ $header = true;
 else
 {
     exit(21);
-}*/
+}
 
-$line
+$line;
 
 while ($line = fgets(STDIN))
 {
-    $token = explode('', trim($line, '\n'))
+    $token = explode('', trim($line, '\n'));
     switch(strtoupper($tokens[0]))
     {
         case 'MOVE':
