@@ -35,13 +35,64 @@ function is_variable($string)
 
 function is_symbol($string)
 {
-    if(true)
+    $type = explode('@', $string);
+    switch($type[0])
     {
-        return true;
-    }
-    else
-    {
-        return false;
+        case 'int':
+            if(is_numeric($type[1]))
+            {
+                //TODO
+            }
+            else
+            {
+                exit(23);
+            }
+            break;
+        case 'string':
+            if(ctype_print($type[1]))
+            {
+                foreach ($type as $char)
+                {
+                    for($i = 0; $i < strlen($char); $i++)
+                    {
+                        switch($char[$i])
+                        {
+                            case '':
+                            case '#':
+                            case '\\':
+                            exit(23);
+                        }
+                        //TODO escape sequence
+                    }
+                }
+            }
+            else
+            {
+                exit(23);
+            }
+            break;
+        case 'bool':
+            if($type[1] == 'true' || $type[1] == 'false')
+            {
+                //TODO
+            }
+            else
+            {
+                exit(23);
+            }
+            break;
+        case 'nil':
+            if($type[1] == 'nil')
+            {
+
+            }
+            else
+            {
+                exit(23);
+            }
+            break;
+        default:
+        exit(23); //TODO check whether the error code is correct
     }
 }
 
