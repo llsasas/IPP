@@ -184,7 +184,8 @@ while ($line = fgets(STDIN)) {
         case 'DPRINT':
         case 'PUSHS':
             break;
-
+        default:
+            exit(22); //TODO is this the correct return code for unknown instruction?
     }
 }
 
