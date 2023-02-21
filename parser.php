@@ -1,149 +1,142 @@
 <?php
 
 ini_set('display_errors', 'stderr');
-echo("<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n");
-echo("<program language = \"IPPcode23\">");
-if($argc > 1)
+
+$xml_output = "";
+
+// Attaches given string to an output xml file that will be printed at the end of the program
+function attach_to_output($current, $to_attach)
 {
-    if($argv[2] == "--help")
-        echo("Usage: parser.php "); //TODO
-        exit(0);
-    
+    $current = $current . $to_attach . "\n";
+    return $current;
 }
 
-$header = false;
-if(fgets(STDIN) != ".IPPcode23")
-{
-    exit(21);
-}
-else
-{
-
+// Prints the instruction how to use the program correctly if the --help is used
+if ($argc > 1) {
+    if ($argv[2] == "--help")
+        echo ("Usage: parser.php "); //TODO
+    exit(0);
 }
 
-function is_variable($string)
+$xml_output = attach_to_output($xml_output, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+$xml_output = attach_to_output($xml_output, "<program language = \"IPPcode23\">");
+
+// Erases the comments from the given line
+function erase_comments($line)
 {
-    if(preg_match("/(LF || TF || GF)@([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?]))* */",$string[1]))
-    {
-        return true;
+    preg_replace("/#.*/",'',$line);
+}
+function is_variable($name)
+{
+    if (preg_match("/(LF | TF | GF)@([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?]))* /", $name)) {
+        return 0;
+    } else {
+        return 23;
     }
-    else
-    {
-        return false;
+}
+
+function is_label($name)
+{
+    if (preg_match("/([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?]))* /", $name)) {
+        return 0;
+    } else {
+        return 23;
     }
 }
 
-function is_symbol($string)
+function is_symbol($name)
 {
-    $type = explode('@', $string);
-    switch($type[0])
+    if (preg_match("/(LF | TF | GF)@([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?])*) /", $name)) 
     {
+        return 0;
+    } 
+    if(preg_match("/(bool)@(true | false) */", $name))
+    {
+        return 0;
+    }
+    if(preg_match("/(int)@ [+-]?[0-9]* /", $name))
+    {
+        return 0;
+    }
+    if(preg_match("/nil@nil/", $name))
+    {
+        return 0;
+    }
+    //TODO finish string 
+    if(preg_match("/string@[s] /", $name))
+    {
+        return 0;
+    }
+
+    return 23;
+}
+
+function is_type($name)
+{
+    switch ($name) {
         case 'int':
-            if(is_numeric($type[1]))
-            {
-                //TODO
-            }
-            else
-            {
-                exit(23);
-            }
-            break;
-        case 'string':
-            if(ctype_print($type[1]))
-            {
-                foreach ($type as $char)
-                {
-                    for($i = 0; $i < strlen($char); $i++)
-                    {
-                        switch($char[$i])
-                        {
-                            case '':
-                            case '#':
-                            case '\\':
-                            exit(23);
-                        }
-                        //TODO escape sequence
-                    }
-                }
-            }
-            else
-            {
-                exit(23);
-            }
-            break;
         case 'bool':
-            if($type[1] == 'true' || $type[1] == 'false')
-            {
-                //TODO
-            }
-            else
-            {
-                exit(23);
-            }
-            break;
-        case 'nil':
-            if($type[1] == 'nil')
-            {
-
-            }
-            else
-            {
-                exit(23);
-            }
-            break;
+        case 'string':
+            return 0;
         default:
-        exit(23); //TODO check whether the error code is correct
+            return 23;
     }
 }
 
-function instruction($num,$arguments,$name)
+/*function instruction($num, $arguments, $name)
 {
-    echo("<instruction order=\"$num\" opcode\"$name\">\n");
+    echo ("<instruction order=\"$num\" opcode\"$name\">\n");
     //TODO arguments
-    echo("<//instruction>");
-}
+    echo ("<//instruction>");
+}*/
+$header = false;
 $line;
 $instrctnum = 0;
-while ($line = fgets(STDIN))
-{
+while ($line = fgets(STDIN)) {
+    if(!$header)
+    {
+        $line = strtoupper($line);
+        if($line == ".IPPCODE23")
+        {
+            $header = true;
+        }
+        else
+        {
+            exit(21);
+        }
+    }
     $instrctnum++;
     $token = explode('', trim($line, '\n'));
-    switch(strtoupper($tokens[0]))
-    {
+    switch (strtoupper($tokens[0])) {
+        // <var> <symb>
         case 'MOVE':
-            if(is_variable($line[1]))
-            {
+        case 'INT2CHAR':
+        case 'STRLEN':
+        case 'TYPE':
+            if (!is_variable($line[1])) {
                 //todo
-            }
-            else
-            {
+            } else {
                 exit(23);
             }
             break;
-      /*  case 'CREATEFRAME':
-            break;
-        case 'PUSHFRAME':
-            break;
-        case 'POPFRAME':
-            break;*/
+
+        // <var>
         case 'DEFVAR':
-            if(is_variable($line[1]))
-            {
+        case 'POPS':
+            if (is_variable($line[1])) {
                 //TODO
-            }
-            else
-            {
+            } else {
                 exit(23);
             }
             break;
-     /*   case 'CALL':
-            break;*/
-        case 'RETURN':
+        // <label>
+        case 'CALL':
+        case 'LABEL':
+
+        case 'JUMP':
             break;
-        case 'PUSHS':
-            break;
-        case 'POPS':
-            break;
+
+        // <var> <symb1> <symb2>
         case 'ADD':
             break;
         case 'SUB':
@@ -164,36 +157,34 @@ while ($line = fgets(STDIN))
             break;
         case 'NOT':
             break;
-        case 'INT2CHAR':
-            break;
         case 'STRI2INT':
             break;
+
+        // <var> <type>
         case 'READ':
             break;
-        case 'WRITE':
-            break;
+
+        // <var> <symb2> <symb2> 
         case 'CONCAT':
-            break;
-        case 'STRLEN':
             break;
         case 'GETCHAR':
             break;
         case 'SETCHAR':
             break;
-        case 'TYPE':
-            break;
-        case 'LABEL':
-            break;
-        case 'JUMP':
-            break;
+
+        // <label> <symb1> <symb2>
         case 'JUMPIFEQ':
             break;
         case 'JUMPIFNEQ':
             break;
+
+        // <symb>
         case 'EXIT':
-            break;
+        case 'WRITE':
         case 'DPRINT':
+        case 'PUSHS':
             break;
+
     }
 }
 
