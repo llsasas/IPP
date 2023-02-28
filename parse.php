@@ -24,8 +24,10 @@ $xml_output = attach_to_output($xml_output, "<program language = \"IPPcode23\">"
 // Erases the comments from the given line
 function erase_comments($line)
 {
-    preg_replace("/#.*/",'',$line);
+    preg_replace("/#.*/", '', $line);
 }
+
+// Syntax check of variables
 function is_variable($name)
 {
     if (preg_match("/(LF | TF | GF)@([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?]))* /", $name)) {
@@ -35,6 +37,7 @@ function is_variable($name)
     }
 }
 
+// Syntax check of labels
 function is_label($name)
 {
     if (preg_match("/([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?]))* /", $name)) {
@@ -44,27 +47,23 @@ function is_label($name)
     }
 }
 
+// Syntax check of symbols
 function is_symbol($name)
 {
-    if (preg_match("/(LF | TF | GF)@([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?])*) /", $name)) 
-    {
-        return 0;
-    } 
-    if(preg_match("/(bool)@(true | false) */", $name))
-    {
+    if (preg_match("/(LF | TF | GF)@([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?])*) /", $name)) {
         return 0;
     }
-    if(preg_match("/(int)@ [+-]?[0-9]* /", $name))
-    {
+    if (preg_match("/(bool)@(true | false) */", $name)) {
         return 0;
     }
-    if(preg_match("/nil@nil/", $name))
-    {
+    if (preg_match("/(int)@ [+-]?[0-9]* /", $name)) {
+        return 0;
+    }
+    if (preg_match("/nil@nil/", $name)) {
         return 0;
     }
     //TODO finish string 
-    if(preg_match("/string@[s] /", $name))
-    {
+    if (preg_match("/string@[s] /", $name)) {
         return 0;
     }
 
@@ -83,99 +82,137 @@ function is_type($name)
     }
 }
 
-/*function instruction($num, $arguments, $name)
+function instruction($num, $arguments, $name, $numofarguments, $argstype)
 {
-    echo ("<instruction order=\"$num\" opcode\"$name\">\n");
-    //TODO arguments
+    global $xml_output;
+    $xml_output = attach_to_output($xml_output, "<instruction order=\"$num\" opcode\"$name\">\n");
+    switch ($numofarguments) {
+        case '1':
+            $xml_output = attach_to_output($xml_output, "<arg1 type=\"$argstype[0]\"> $arguments[0]</arg1>\n");
+            break;
+        case '2':
+            $xml_output = attach_to_output($xml_output, "<arg2 type=\"$argstype[1]\"> $arguments[1]</arg2>\n");
+            break;
+        case '3':
+            $xml_output = attach_to_output($xml_output, "<arg3 type=\"$argstype[2]\"> $arguments[2]</arg3>\n");
+            break;
+    }
     echo ("<//instruction>");
-}*/
+}
+
+function create_array()
+{
+    //
+}
 $header = false;
 $line;
 $instrctnum = 0;
 while ($line = fgets(STDIN)) {
-    if(!$header)
-    {
+    if (!$header) {
         $line = strtoupper($line);
-        if($line == ".IPPCODE23")
-        {
+        if ($line == ".IPPCODE23") {
             $header = true;
-        }
-        else
-        {
+        } else {
             exit(21);
         }
     }
     $instrctnum++;
     $token = explode('', trim($line, '\n'));
-    switch (strtoupper($tokens[0])) {
+    switch (strtoupper($token[0])) {
         // <var> <symb>
         case 'MOVE':
         case 'INT2CHAR':
         case 'STRLEN':
         case 'TYPE':
-            if (!is_variable($line[1])) {
-                //todo
+            if (!is_variable($token[1])) {
+                if (is_symbol($token[2])) {
+                    instruction($instrctnum, $arguments, $token[0], 2,$argstype);
+                } else {
+                    exit(23);
+                }
             } else {
+
                 exit(23);
             }
+
             break;
 
         // <var>
         case 'DEFVAR':
         case 'POPS':
-            if (is_variable($line[1])) {
+            if (is_variable($token[1])) {
                 //TODO
             } else {
                 exit(23);
             }
             break;
+
         // <label>
         case 'CALL':
         case 'LABEL':
-
         case 'JUMP':
+            if (is_label($token[1])) {
+                //TODO
+            } else {
+                exit(23);
+            }
             break;
 
         // <var> <symb1> <symb2>
         case 'ADD':
-            break;
         case 'SUB':
-            break;
         case 'MUL':
-            break;
         case 'IDIV':
-            break;
         case 'LT':
-            break;
         case 'GT':
-            break;
         case 'EQ':
-            break;
         case 'AND':
-            break;
         case 'OR':
-            break;
         case 'NOT':
-            break;
         case 'STRI2INT':
+        case 'CONCAT':
+        case 'GETCHAR':
+        case 'SETCHAR':
+            if (is_variable($token[1])) {
+                if (is_symbol($token[2])) {
+                    if (is_symbol(($token[3]))) {
+                        //TODO
+                    } else {
+                        exit(23);
+                    }
+                } else {
+                    exit(23);
+                }
+            } else {
+                exit(23);
+            }
             break;
 
         // <var> <type>
         case 'READ':
-            break;
-
-        // <var> <symb2> <symb2> 
-        case 'CONCAT':
-            break;
-        case 'GETCHAR':
-            break;
-        case 'SETCHAR':
+            if (is_variable(token[1])) {
+                //TODO
+            } else {
+                exit(23);
+            }
             break;
 
         // <label> <symb1> <symb2>
         case 'JUMPIFEQ':
-            break;
         case 'JUMPIFNEQ':
+            if (is_label($token[1])) {
+                if (is_symbol($token[2])) {
+                    if (is_symbol(($token[3]))) {
+                        //TODO
+                    } else {
+                        exit(23);
+                    }
+                } else {
+                    exit(23);
+                }
+            } else {
+                exit(23);
+            }
             break;
 
         // <symb>
@@ -183,10 +220,16 @@ while ($line = fgets(STDIN)) {
         case 'WRITE':
         case 'DPRINT':
         case 'PUSHS':
+            if (is_symbol($token[1])) {
+                //TODO
+            } else {
+                exit(23);
+            }
             break;
         default:
             exit(22); //TODO is this the correct return code for unknown instruction?
     }
 }
+
 
 ?>
