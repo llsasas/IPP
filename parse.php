@@ -63,7 +63,7 @@ function is_symbol($name)
         return 0;
     }
     //TODO finish string 
-    if (preg_match("/string@[s] /", $name)) {
+    if (preg_match("/string@([s]\\\\[0-9]{3}) /", $name)) {
         return 0;
     }
 
@@ -82,31 +82,28 @@ function is_type($name)
     }
 }
 
-function instruction($num, $arguments, $name, $numofarguments, $argstype)
+function instruction($num, $tokens, $numofarguments, $argstype)
 {
     global $xml_output;
-    $xml_output = attach_to_output($xml_output, "<instruction order=\"$num\" opcode\"$name\">\n");
+    $xml_output = attach_to_output($xml_output, "<instruction order=\"$num\" opcode=\" $tokens[0] \">\n");
     switch ($numofarguments) {
         case '1':
-            $xml_output = attach_to_output($xml_output, "<arg1 type=\"$argstype[0]\"> $arguments[0]</arg1>\n");
+            $xml_output = attach_to_output($xml_output, "<arg1 type=\"$argstype[0]\"> $tokens[1]</arg1>\n");
             break;
         case '2':
-            $xml_output = attach_to_output($xml_output, "<arg2 type=\"$argstype[1]\"> $arguments[1]</arg2>\n");
+            $xml_output = attach_to_output($xml_output, "<arg2 type=\"$argstype[1]\"> $tokens[2]</arg2>\n");
             break;
         case '3':
-            $xml_output = attach_to_output($xml_output, "<arg3 type=\"$argstype[2]\"> $arguments[2]</arg3>\n");
+            $xml_output = attach_to_output($xml_output, "<arg3 type=\"$argstype[2]\"> $tokens[3]</arg3>\n");
             break;
     }
     echo ("<//instruction>");
 }
 
-function create_array()
-{
-    //
-}
 $header = false;
 $line;
 $instrctnum = 0;
+$arg_num = 0;
 while ($line = fgets(STDIN)) {
     if (!$header) {
         $line = strtoupper($line);
@@ -118,15 +115,20 @@ while ($line = fgets(STDIN)) {
     }
     $instrctnum++;
     $token = explode('', trim($line, '\n'));
+    count($token);
     switch (strtoupper($token[0])) {
         // <var> <symb>
         case 'MOVE':
         case 'INT2CHAR':
         case 'STRLEN':
         case 'TYPE':
+            if($arg_num != 2)
+            {
+                exit(23);
+            }
             if (!is_variable($token[1])) {
                 if (is_symbol($token[2])) {
-                    instruction($instrctnum, $arguments, $token[0], 2,$argstype);
+                    instruction($instrctnum, $token, $arg_num,$argstype);
                 } else {
                     exit(23);
                 }
@@ -140,8 +142,12 @@ while ($line = fgets(STDIN)) {
         // <var>
         case 'DEFVAR':
         case 'POPS':
+            if($arg_num != 1)
+            {
+                exit(23);
+            }
             if (is_variable($token[1])) {
-                //TODO
+                instruction($instrctnum, $token, $arg_num,$argstype);
             } else {
                 exit(23);
             }
@@ -151,8 +157,12 @@ while ($line = fgets(STDIN)) {
         case 'CALL':
         case 'LABEL':
         case 'JUMP':
+            if($arg_num != 1)
+            {
+                exit(23);
+            }
             if (is_label($token[1])) {
-                //TODO
+                instruction($instrctnum, $token, $arg_num,$argstype);
             } else {
                 exit(23);
             }
@@ -173,10 +183,14 @@ while ($line = fgets(STDIN)) {
         case 'CONCAT':
         case 'GETCHAR':
         case 'SETCHAR':
+            if($arg_num != 3)
+            {
+                exit(23);
+            }
             if (is_variable($token[1])) {
                 if (is_symbol($token[2])) {
                     if (is_symbol(($token[3]))) {
-                        //TODO
+                        instruction($instrctnum, $token, $arg_num,$argstype);
                     } else {
                         exit(23);
                     }
@@ -190,8 +204,12 @@ while ($line = fgets(STDIN)) {
 
         // <var> <type>
         case 'READ':
+            if($arg_num != 2)
+            {
+                exit(23);
+            }
             if (is_variable(token[1])) {
-                //TODO
+                instruction($instrctnum, $token, $arg_num,$argstype);
             } else {
                 exit(23);
             }
@@ -200,10 +218,14 @@ while ($line = fgets(STDIN)) {
         // <label> <symb1> <symb2>
         case 'JUMPIFEQ':
         case 'JUMPIFNEQ':
+            if($arg_num != 3)
+            {
+                exit(23);
+            }
             if (is_label($token[1])) {
                 if (is_symbol($token[2])) {
                     if (is_symbol(($token[3]))) {
-                        //TODO
+                        instruction($instrctnum, $token, $arg_num,$argstype);
                     } else {
                         exit(23);
                     }
@@ -220,8 +242,12 @@ while ($line = fgets(STDIN)) {
         case 'WRITE':
         case 'DPRINT':
         case 'PUSHS':
+            if($arg_num != 1)
+            {
+                exit(23);
+            }
             if (is_symbol($token[1])) {
-                //TODO
+                instruction($instrctnum, $token, $arg_num,$argstype);
             } else {
                 exit(23);
             }
