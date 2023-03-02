@@ -7,7 +7,6 @@ $xml_output = "";
 // Attaches given string to an output xml file that will be printed at the end of the program
 function attach_to_output($current, $to_attach)
 {
-    fwrite(STDERR, "10");
     $current = $current . $to_attach . "\n";
     return $current;
 }
@@ -30,7 +29,7 @@ function erase_comments($string)
 // Syntax check of variables
 function is_variable($name)
 {
-    if (preg_match("/(LF | TF | GF)@([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?]))* /", $name)) {
+    if (preg_match("/^(LF|TF|GF)@([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?])*)$/", $name)) {
         return 0;
     } else {
         return 23;
@@ -50,7 +49,7 @@ function remove_whitespace($line)
 function is_label($name)
 {
     fwrite(STDERR, "54");
-    if (preg_match("/([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?]))* /", $name)) {
+    if (preg_match("/^([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?]))*$/", $name)) {
         return 0;
     } else {
         return 23;
@@ -60,21 +59,21 @@ function is_label($name)
 // Syntax check of symbols
 function is_symbol($name)
 {
-    fwrite(STDERR, "65");
-    if (preg_match("/(LF | TF | GF)@([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?])*) /", $name)) {
+
+    if (preg_match("/^(LF|TF|GF)@([_\-$#%*!?A-Za-z]([A-Za-z0-9_\-$#%*!?])*)$/", $name)) {
         return 0;
     }
-    if (preg_match("/(bool)@(true | false) */", $name)) {
+    if (preg_match("/^(bool)@(true|false)$/", $name)) {
         return 0;
     }
-    if (preg_match("/(int)@ [+-]?[0-9]* /", $name)) {
+    if (preg_match("/^(int)@ [+-]?[0-9]*$/", $name)) {
         return 0;
     }
-    if (preg_match("/nil@nil/", $name)) {
+    if (preg_match("/^nil@nil$/", $name)) {
         return 0;
     }
-    //TODO finish string 
-    if (preg_match("/string@([s]\\\\[0-9]{3}) /", $name)) {
+    //TODO check if it is correct
+    if (preg_match("/^string@(([^\\\]*)(\\\[0-9]{3})*)*$/", $name)) {
         return 0;
     }
 
@@ -83,7 +82,6 @@ function is_symbol($name)
 
 function is_type($name)
 {
-    fwrite(STDERR, "88");
     switch ($name) {
         case 'int':
         case 'bool':
@@ -92,6 +90,17 @@ function is_type($name)
         default:
             return 23;
     }
+}
+
+function modify_line($line)
+{
+    $line = erase_comments($line);
+    $line = remove_whitespace($line);
+    $line = preg_replace("/&/",'&amp;',$line);                       
+    $line = preg_replace("/</",'&lt;',$line);
+    $line = preg_replace("/>/",'&gt;',$line);
+    $line = preg_replace('/#.*/','',preg_replace('#//.*#','',preg_replace('#/\*(?:[^*]*(?:\*(?!/))*)*\*//#','',($line))));
+    return $line;
 }
 
 function instruction($num, $tokens, $numofarguments, $argstype)
@@ -120,12 +129,8 @@ $header = false;
 $instrctnum = 0;
 
 while ($line = fgets(STDIN)) {
-   $line = erase_comments($line);
-   $line = remove_whitespace($line);
-   $line = preg_replace("/&/",'&amp;',$line);                       #nacitanie po riadku zo vstupu, reg. vyrazy na upravu riadku (odkomentovanie, zamenenie zanakov)
-   $line = preg_replace("/</",'&lt;',$line);
-   $line = preg_replace("/>/",'&gt;',$line);
-   $line = preg_replace('/#.*/','',preg_replace('#//.*#','',preg_replace('#/\*(?:[^*]*(?:\*(?!/))*)*\*//#','',($line))));
+    
+    $line = modify_line($line);
    
     if ($header == false && $line!= "\n") {
         if ((strtoupper(trim($line, "\n")) == ".IPPCODE23") || (strtoupper(trim($line, "\n")) == ".IPPCODE23")) {
@@ -145,19 +150,23 @@ while ($line = fgets(STDIN)) {
     $instrctnum++;
     $token = array_values(array_filter(explode(' ',trim($line, "\n"))));
     $arg_num = count($token) - 1;
-    switch (strtoupper($token[0])) {
+    $upper = strtoupper($token[0]);
+    switch ($upper) {
         // <var> <symb>
         case 'MOVE':
         case 'INT2CHAR':
         case 'STRLEN':
         case 'TYPE':
-            $argstype = array("var", "symb");
+            $argstype = array("var", $token[2]);
             if($arg_num != 2)
             {
                 exit(23);
             }
             if (!is_variable($token[1])) {
                 if (is_symbol($token[2])) {
+                    $symb = explode("@", $token[2]);
+                    $argstype = array("var", $symb[0]);
+                    $token[1] = $symb[1];
                     instruction($instrctnum, $token, $arg_num,$argstype);
                 } else {
                     exit(23);
@@ -215,7 +224,6 @@ while ($line = fgets(STDIN)) {
         case 'CONCAT':
         case 'GETCHAR':
         case 'SETCHAR':
-            $argstype = array("var", "symb1", "symb2");
             if($arg_num != 3)
             {
                 exit(23);
@@ -223,7 +231,11 @@ while ($line = fgets(STDIN)) {
             if (is_variable($token[1])) {
                 if (is_symbol($token[2])) {
                     if (is_symbol(($token[3]))) {
-
+                        $symb = explode("@", $token[2]);
+                        $symb2 = explode("@", $token[3]);
+                        $argstype = array("var", $symb[0], $symb2[0]);
+                        $token[2] = $symb[1];
+                        $token[3] = $symb2[1];
                         instruction($instrctnum, $token, $arg_num,$argstype);
                     } else {
                         exit(23);
@@ -253,7 +265,6 @@ while ($line = fgets(STDIN)) {
         // <label> <symb1> <symb2>
         case 'JUMPIFEQ':
         case 'JUMPIFNEQ':
-            $argstype = array("label", "symb1", "symb2");
             if($arg_num != 3)
             {
                 exit(23);
@@ -261,6 +272,32 @@ while ($line = fgets(STDIN)) {
             if (is_label($token[1])) {
                 if (is_symbol($token[2])) {
                     if (is_symbol(($token[3]))) {
+                        if(preg_match('/(LF | TF | GF)@var/', $token[2]) == 0)
+                        {
+                            $symb = explode("@", $token[2]);
+                            $token[2] = $symb[1];
+                            if(preg_match('/(LF | TF | GF)@var/', $token[3]) == 0)
+                            {
+                                $symb2 = explode("@", $token[3]);
+                                $token[3] = $symb2[1];
+                                $argstype = array("label", $symb[0], $symb2[0]);
+                            }
+                            else
+                            {
+                                $argstype = array("label", "var", "var");
+                            }
+                        }
+                        else
+                        {
+                            if(preg_match('/(LF | TF | GF)@var/', $token[3]) == 0)
+                            {
+                                
+                            }
+                            else
+                            {
+
+                            }
+                        }
                         instruction($instrctnum, $token, $arg_num,$argstype);
                     } else {
                         exit(23);
@@ -279,17 +316,40 @@ while ($line = fgets(STDIN)) {
         case 'WRITE':
         case 'DPRINT':
         case 'PUSHS':
-            $argstype = array("symb");
+            $argstype = array($token[1]);
             if($arg_num != 1)
             {
                 exit(23);
             }
             if (is_symbol($token[1])) {
+                if(preg_match('/(LF | TF | GF)@var/', $token[1]) == 0)
+                {
+                $symb = explode("@", $token[1]);  
+                $argstype = array($symb[0]);
+                $token[1] = $symb[1];
+                }
+                else
+                {
+                    $argstype = array("var");
+                }
                 instruction($instrctnum, $token, $arg_num,$argstype);
             } else {
                 exit(23);
             }
             break;
+        case 'CREATEFRAME':
+        case 'PUSHFRAME':
+        case 'POPFRAME':
+        case 'RETURN':
+        case 'BREAK':
+            if($arg_num != 0)
+            {
+                exit(23);
+            }
+            else
+            {
+                //TODO - ma tady byt vypis?
+            }
         default:
             exit(22); //TODO is this the correct return code for unknown instruction?
     }
