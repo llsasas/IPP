@@ -66,7 +66,7 @@ function is_symbol($name)
     if (preg_match("/^(bool)@(true|false)$/", $name)) {
         return 0;
     }
-    if (preg_match("/^(int)@ [+-]?[0-9]*$/", $name)) {
+    if (preg_match("/^(int)@[+-]?[0-9]*$/", $name)) {
         return 0;
     }
     if (preg_match("/^nil@nil$/", $name)) {
@@ -157,14 +157,13 @@ while ($line = fgets(STDIN)) {
         case 'INT2CHAR':
         case 'STRLEN':
         case 'TYPE':
-            $argstype = array("var", $token[2]);
             if($arg_num != 2)
             {
                 exit(23);
             }
             if (!is_variable($token[1])) {
                 if (!is_symbol($token[2])) {
-                    if(!is_variable($token[1]))
+                    if(!is_variable($token[2]))
                     {
                         $argstype = array("var", "var");
                     }
@@ -172,7 +171,7 @@ while ($line = fgets(STDIN)) {
                     {
                     $symb = explode("@", $token[2]);
                     $argstype = array("var", $symb[0]);
-                    $token[1] = $symb[1];
+                    $token[2] = $symb[1];
                     }
                     instruction($instrctnum, $token, $arg_num,$argstype);
                 } else {
