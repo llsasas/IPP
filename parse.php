@@ -163,10 +163,17 @@ while ($line = fgets(STDIN)) {
                 exit(23);
             }
             if (!is_variable($token[1])) {
-                if (is_symbol($token[2])) {
+                if (!is_symbol($token[2])) {
+                    if(!is_variable($token[1]))
+                    {
+                        $argstype = array("var", "var");
+                    }
+                    else
+                    {
                     $symb = explode("@", $token[2]);
                     $argstype = array("var", $symb[0]);
                     $token[1] = $symb[1];
+                    }
                     instruction($instrctnum, $token, $arg_num,$argstype);
                 } else {
                     exit(23);
@@ -186,7 +193,7 @@ while ($line = fgets(STDIN)) {
             {
                 exit(23);
             }
-            if (is_variable($token[1])) {
+            if (!is_variable($token[1])) {
                 instruction($instrctnum, $token, $arg_num,$argstype);
             } else {
                 exit(23);
@@ -202,7 +209,7 @@ while ($line = fgets(STDIN)) {
             {
                 exit(23);
             }
-            if (is_label($token[1])) {
+            if (!is_label($token[1])) {
                 instruction($instrctnum, $token, $arg_num,$argstype);
             } else {
                 exit(23);
@@ -228,14 +235,39 @@ while ($line = fgets(STDIN)) {
             {
                 exit(23);
             }
-            if (is_variable($token[1])) {
-                if (is_symbol($token[2])) {
-                    if (is_symbol(($token[3]))) {
-                        $symb = explode("@", $token[2]);
-                        $symb2 = explode("@", $token[3]);
-                        $argstype = array("var", $symb[0], $symb2[0]);
-                        $token[2] = $symb[1];
-                        $token[3] = $symb2[1];
+            if (!is_variable($token[1])) {
+                if (!is_symbol($token[2])) {
+                    if (!is_symbol(($token[3]))) {
+                        if(is_variable($token[2]) != 0)
+                        {
+                            $symb = explode("@", $token[2]);
+                            $token[2] = $symb[1];
+                            if(is_variable($token[3]) != 0)
+                            {
+                                $symb2 = explode("@", $token[3]);
+                                $token[3] = $symb2[1];
+                                $argstype = array("var", $symb[0], $symb2[0]);
+                            }
+                            else
+                            {
+                                $argstype = array("var", $symb[0], "var");
+                            }
+                        }
+                        else
+                        {
+                            if(is_variable($token[3]) != 0)
+                            {
+                                $symb2 = explode("@", $token[3]);
+                                $token[3] = $symb2[1];
+                                $argstype = array("var", "var", $symb2[0]);
+                            }
+                            else
+                            {
+                                $argstype = array("var", "var", "var");
+                            }
+                        }
+                        
+                        
                         instruction($instrctnum, $token, $arg_num,$argstype);
                     } else {
                         exit(23);
@@ -255,7 +287,7 @@ while ($line = fgets(STDIN)) {
             {
                 exit(23);
             }
-            if (is_variable($token[1])) {
+            if (!is_variable($token[1])) {
                 instruction($instrctnum, $token, $arg_num,$argstype);
             } else {
                 exit(23);
@@ -269,14 +301,14 @@ while ($line = fgets(STDIN)) {
             {
                 exit(23);
             }
-            if (is_label($token[1])) {
-                if (is_symbol($token[2])) {
-                    if (is_symbol(($token[3]))) {
-                        if(preg_match('/(LF | TF | GF)@var/', $token[2]) == 0)
+            if (!is_label($token[1])) {
+                if (!is_symbol($token[2])) {
+                    if (!is_symbol(($token[3]))) {
+                        if(is_variable($token[2]) != 0)
                         {
                             $symb = explode("@", $token[2]);
                             $token[2] = $symb[1];
-                            if(preg_match('/(LF | TF | GF)@var/', $token[3]) == 0)
+                            if(is_variable($token[3]) != 0)
                             {
                                 $symb2 = explode("@", $token[3]);
                                 $token[3] = $symb2[1];
@@ -284,18 +316,20 @@ while ($line = fgets(STDIN)) {
                             }
                             else
                             {
-                                $argstype = array("label", "var", "var");
+                                $argstype = array("label", $symb[0], "var");
                             }
                         }
                         else
                         {
-                            if(preg_match('/(LF | TF | GF)@var/', $token[3]) == 0)
+                            if(is_variable($token[3]) != 0)
                             {
-                                
+                                $symb2 = explode("@", $token[3]);
+                                $token[3] = $symb2[1];
+                                $argstype = array("label", "var", $symb2[0]);
                             }
                             else
                             {
-
+                                $argstype = array("label", "var", "var");
                             }
                         }
                         instruction($instrctnum, $token, $arg_num,$argstype);
@@ -321,8 +355,8 @@ while ($line = fgets(STDIN)) {
             {
                 exit(23);
             }
-            if (is_symbol($token[1])) {
-                if(preg_match('/(LF | TF | GF)@var/', $token[1]) == 0)
+            if (!is_symbol($token[1])) {
+                if(is_variable($token[1]) != 0)
                 {
                 $symb = explode("@", $token[1]);  
                 $argstype = array($symb[0]);
